@@ -8,5 +8,5 @@ setup(
     license='Free',
     author='Matt Gibson',
     author_email='magg8matt@hotmail.co.uk',
-    description='My simple game'
+    description='My simple game', install_requires=['pygame']
 )

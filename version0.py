@@ -40,49 +40,73 @@ def main():
     # define the main flow of the game here. It gets called from the lines at
     # the bottom when this file is called as a script
 
-    # display a simple welcome screen. In the future, this can be extended to show the leaderbard
-    display_welcome_screen()
+    play_game = True
+    while play_game:
+        # display a simple welcome screen. In the future, this can be extended to show the leader board
+        display_welcome_screen()
 
-    # initialise a variable for the current time, to be used later...
-    start_time = time.time()
+        # initialise a variable for the current time, to be used later...
+        start_time = time.time()
 
-    # call run time trial to get the speed of the runner
-    run_time_trial()
+        # call run time trial to get the speed of the runner
+        run_time_trial()
 
-    # this variable now takes in the current time, same as what we used before. But this time is only set
-    # after you have completed the time trial
-    end_time = time.time()
+        # this variable now takes in the current time, same as what we used before. But this time is only set
+        # after you have completed the time trial
+        end_time = time.time()
 
-    # we can work out time taken to press ten times by taking away the initial time, from the end time. Giving
-    # us seconds (round to 2 hundredths)
-    overall_time = round(end_time - start_time, 2)
+        # we can work out time taken to press ten times by taking away the initial time, from the end time. Giving
+        # us seconds (round to 2 hundredths)
+        overall_time = round(end_time - start_time, 2)
 
-    # time sleep is just a brief wait so code does not come out clunky and too quickly
-    time.sleep(0.5)
+        # time sleep is just a brief wait so code does not come out clunky and too quickly
+        time.sleep(0.5)
 
-    # format is a nice try to implement a variable at the end of which is not global, allowing it to be entered
-    # in the string
-    # this works no matter what rounded seconds is meaning there is that flexibility
-    show_time_trial_result(overall_time)
+        # format is a nice try to implement a variable at the end of which is not global, allowing it to be entered
+        # in the string
+        # this works no matter what rounded seconds is meaning there is that flexibility
+        show_time_trial_result(overall_time)
 
-    user_start_velocity = get_velocity_from_keystrokes_per_second(overall_time)
+        user_start_velocity = get_velocity_from_keystrokes_per_second(overall_time)
 
-    # figuring out a minimum time for the user to complete the race in
-    # speed = distance / time
-    minimum_time = 100.0 / user_start_velocity
+        on_your_marks_get_set_go()
 
-    time.sleep(2)
-    print("\nThe Race is starting! When you see go, hit the right arrow!")
-    # the time between go and space is the delay in time it took for the user to begin his or her run, this must be
-    # added to the total initial minimum time.
-    print("\n3...")
-    time.sleep(1.5)
-    print("\n2...")
-    time.sleep(1.5)
-    print("\n1...")
-    time.sleep(2)
-    print("\nGO!")
+        rounded_delayed_starting_time = run_sprint()
 
+        play_game = display_time_and_ask_to_play_again(user_start_velocity, rounded_delayed_starting_time)
+
+
+def display_time_and_ask_to_play_again(minimum_time, rounded_delayed_starting_time):
+    print(" ")
+    print(rounded_delayed_starting_time)
+    # here we take into account the time it takes for the user to begin running
+    # we add this time to the already total minimum time
+    # this gives us a total time now as the character will begin to run
+    total_time = minimum_time + rounded_delayed_starting_time
+    # this is just to make sure it works
+    display_game_background()
+    display_text("Your total time was {t}".format(t=(round(total_time, 2))), location=(150, 200))
+    display_text("Would you like to play again? (Yes/No)", location=(150, 300))
+    update_screen()
+
+    pressed = False
+    result = False
+    while not pressed:
+        for event in pygame.event.get():
+            # if the user closes the window or hits the escape key, then quit
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                quit_game()
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_y:
+                pressed = True
+                result = True
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_n:
+                pressed = True
+    return result
+
+
+def run_sprint():
     start_delay_current_time = time.time()
     pressed = False
     while not pressed:
@@ -93,19 +117,31 @@ def main():
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                 pressed = True
-
     end_delay_current_time = time.time()
-
     delayed_starting_time = end_delay_current_time - start_delay_current_time
     rounded_delayed_starting_time = (round(delayed_starting_time, 2))
-    print(" ")
-    print(rounded_delayed_starting_time)
-    # here we take into account the time it takes for the user to begin running
-    # we add this time to the already total minimum time
-    # this gives us a total time now as the character will begin to run
-    total_time = minimum_time + rounded_delayed_starting_time
-    # this is just to make sure it works
-    print("\nYour current total time is {t}".format(t=(round(total_time, 2))))
+    return rounded_delayed_starting_time
+
+
+def on_your_marks_get_set_go():
+    display_game_background()
+    display_text("The Race is starting! When you see go, hit the right arrow!", location=(150, 200))
+    display_text("Press enter when ready.", location=(150, 250))
+    update_display_and_wait_for_enter_key_press()
+
+    show_countdown(IMAGES["3"])
+    show_countdown(IMAGES["2"])
+    show_countdown(IMAGES["1"])
+    show_countdown(IMAGES["go"])
+    SOUNDS["starter_pistol"].play()
+
+
+def show_countdown(image):
+    time.sleep(1.5)
+    display_game_background()
+    display_text("The Race is starting! When you see go, hit the right arrow!", location=(150, 200))
+    display_image(image, centered=True)
+    update_screen()
 
 
 def show_time_trial_result(overall_time):
@@ -188,6 +224,24 @@ def display_game_background():
     WINDOW.blit(IMAGES['game_background'], (0, 0))
 
 
+def display_image(image, location=(0, 0), centered=False):
+    global WINDOW
+
+    if centered:
+        width = image.get_width()
+        if width > WINDOW_WIDTH:
+            x = 0
+        else:
+            x = (WINDOW_WIDTH - width) / 2
+        height = image.get_height()
+        if height > WINDOW_HEIGHT:
+            y = 0
+        else:
+            y = (WINDOW_HEIGHT - height) / 2
+        location = (x, y)
+    WINDOW.blit(image, location)
+
+
 def display_runner(progress_percent):
     global WINDOW, IMAGES
     WINDOW.blit(IMAGES['runner'], (200 + 400 * progress_percent, 400))
@@ -223,14 +277,15 @@ def initialize_game():
     IMAGES["7"] = pygame.image.load("Images\\7.png").convert_alpha()
     IMAGES["8"] = pygame.image.load("Images\\8.png").convert_alpha()
     IMAGES["9"] = pygame.image.load("Images\\9.png").convert_alpha()
-    #IMAGES["."] = pygame.image.load("Images\\dot.png").convert_alpha()
+    IMAGES["."] = pygame.image.load("Images\\dot.png").convert_alpha()
 
     # load text images
     IMAGES["go"] = pygame.image.load("Images\\go.png").convert_alpha()
     IMAGES["gameover"] = pygame.image.load("Images\\gameover.png").convert_alpha()
 
     # load sound files
-    SOUNDS["starter_pistol"] = None
+    SOUNDS["starter_pistol"] = pygame.mixer.Sound("Sounds\\starter_pistol.wav")
+
 
 def get_velocity_from_keystrokes_per_second(seconds_for_ten_keystrokes):
     global VELOCITIES
@@ -257,7 +312,10 @@ def get_velocity_from_keystrokes_per_second(seconds_for_ten_keystrokes):
         velocity = VELOCITIES["7 more"]
 
     print("\nYour Starting Velocity is {v} mph".format(v=velocity))
-    return velocity
+
+    # figuring out a minimum time for the user to complete the race in
+    # speed = distance / time
+    return 100.0 / velocity
 
 
 def quit_game():
